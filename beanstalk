@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+
+import sys
+import subprocess
+
+def get_info(cmds):
+    toEcho = ''
+
+    for cmd in cmds:
+        toEcho += "echo '%s'; " % cmd
+
+    fullCommand =  '(%s sleep 1) | telnet localhost 11300 2>/dev/null' % toEcho
+
+    stats = subprocess.Popen(
+        fullCommand,
+        shell=True,
+        stdout=subprocess.PIPE
+    ).communicate()[0]
+
+    return stats.split("\n")
+
+def extract_job_stats(lines):
+    data = {}
+    for line in lines:
+        if line[0:13] == "current-jobs-":
+            rec = line.split(": ")
+            data[rec[0][13:]] = rec[1]
+    return data
+
+def mk_graph(title, data, config=False):
+    if config:
+        print "graph_title %s tube" % title
+        print "graph_vlabel %s tube stats" % title
+        print "graph_category beanstalk"
+    for (record, value) in data.items():
+        if config:
+            print "%s.label %s" % (record, "%s jobs" % record)
+        else:
+            print "%s.value %d" % (record, int(value))
+
+
+config = len(sys.argv) > 1 and sys.argv[1] == 'config'
+
+
+if sys.argv[0][0:34] == '/etc/munin/plugins/beanstalk_tube_':
+    tube = sys.argv[0][34:]
+else:
+    tube = None
+
+if tube is None:
+    tube = 'Global'
+    resp = get_info(['stats', 'list-tubes'])
+else:
+    resp = get_info(['stats-tube %s' % tube])
+
+mk_graph(tube, extract_job_stats(resp), config=config)
+
