@@ -1,4 +1,4 @@
-# Beanstalk Tube Monitoringu
+# Beanstalk Tube Monitoring
 
 By default when enabled, this tool will create a graph of the aggregate values
 of the current ready, urgent, reserved, delayed, and buried jobs in all the
